@@ -6,6 +6,7 @@ var extraParserConstructors = []func(config *viper.Viper) (ExtraParser, error){}
 
 type ExtraParser interface {
 	Parse(am *AuditMessage)
+	Close() error
 }
 
 type ExtraParsers []ExtraParser

@@ -17,6 +17,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/viper"
+	"golang.org/x/sys/unix"
 	"gopkg.in/Graylog2/go-gelf.v2/gelf"
 )
 
@@ -417,6 +418,18 @@ func main() {
 	)
 
 	l.Printf("Started processing events in the range [%d, %d]\n", config.GetInt("events.min"), config.GetInt("events.max"))
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, unix.SIGTERM)
+	go func() {
+		<-sigChan
+		for _, e := range marshaller.extraParsers {
+			if err := e.Close(); err != nil {
+				l.Printf("failed to close: %v", err)
+			}
+		}
+		os.Exit(0)
+	}()
 
 	//Main loop. Get data from netlink and send it to the json lib for processing
 	for {
